@@ -52,12 +52,13 @@ function ExpensesPanel({
   categories,
   currencies,
   baseCurrency,
-  availableMonths,
   selectedCategory,
-  selectedMonth,
+  dateFrom,
+  dateTo,
   searchQuery,
   onCategoryFilterChange,
-  onMonthFilterChange,
+  onDateFromChange,
+  onDateToChange,
   onSearchQueryChange,
   onResetFilters,
   fetchingExpenses,
@@ -154,15 +155,13 @@ function ExpensesPanel({
         </div>
 
         <div>
-          <label>Month</label>
-          <select value={selectedMonth} onChange={onMonthFilterChange}>
-            <option value="">All</option>
-            {availableMonths.map((month) => (
-              <option key={month} value={month}>
-                {month}
-              </option>
-            ))}
-          </select>
+          <label>From</label>
+          <input type="date" value={dateFrom} onChange={onDateFromChange} />
+        </div>
+
+        <div>
+          <label>To</label>
+          <input type="date" value={dateTo} onChange={onDateToChange} />
         </div>
 
         <div className="filter-actions">
@@ -563,11 +562,12 @@ export function Dashboard({
   onAddRecurringExpense,
   onDeleteRecurringExpense,
   onUpdateRecurringExpense,
-  availableMonths,
   selectedCategory,
-  selectedMonth,
+  dateFrom,
+  dateTo,
   onCategoryFilterChange,
-  onMonthFilterChange,
+  onDateFromChange,
+  onDateToChange,
   onSearchQueryChange,
   onStatsGranularityChange,
   onResetFilters,
@@ -576,6 +576,7 @@ export function Dashboard({
   categoryChart,
   dateChart,
   periodStats,
+  periodComparison,
   onLogout,
   onUpdateExpense,
   onDeleteExpense,
@@ -634,7 +635,6 @@ export function Dashboard({
       <section className="summary-grid">
         <SummaryCard title="Total Spent" value={`${summary.total.toFixed(2)} ${baseCurrency}`} />
         <SummaryCard title="This Month" value={`${summary.currentMonthTotal.toFixed(2)} ${baseCurrency}`} />
-        <SummaryCard title="Entries" value={String(summary.entries)} />
       </section>
 
       <section className="content-grid">
@@ -676,12 +676,13 @@ export function Dashboard({
           categories={categories}
           currencies={currencies}
           baseCurrency={baseCurrency}
-          availableMonths={availableMonths}
           selectedCategory={selectedCategory}
-          selectedMonth={selectedMonth}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
           searchQuery={searchQuery}
           onCategoryFilterChange={onCategoryFilterChange}
-          onMonthFilterChange={onMonthFilterChange}
+          onDateFromChange={onDateFromChange}
+          onDateToChange={onDateToChange}
           onSearchQueryChange={onSearchQueryChange}
           onResetFilters={onResetFilters}
           fetchingExpenses={fetchingExpenses}
@@ -766,6 +767,31 @@ export function Dashboard({
         </div>
         {periodStats.rows.length ? (
           <>
+            <div className="compare-grid">
+              <article className="compare-card">
+                <h3>Current {showPeriodLabel(statsGranularity)}</h3>
+                <p>{periodComparison.currentKey}</p>
+                <strong>{periodComparison.currentTotal.toFixed(2)} {baseCurrency}</strong>
+              </article>
+              <article className="compare-card">
+                <h3>Previous {showPeriodLabel(statsGranularity)}</h3>
+                <p>{periodComparison.previousKey}</p>
+                <strong>{periodComparison.previousTotal.toFixed(2)} {baseCurrency}</strong>
+              </article>
+              <article className="compare-card">
+                <h3>Difference</h3>
+                <p>
+                  {periodComparison.change > 0 ? '+' : ''}
+                  {periodComparison.change.toFixed(2)} {baseCurrency}
+                </p>
+                <strong>
+                  {periodComparison.changePercent === null
+                    ? 'n/a'
+                    : `${periodComparison.changePercent > 0 ? '+' : ''}${periodComparison.changePercent.toFixed(1)}%`}
+                </strong>
+              </article>
+            </div>
+
             <div className="monthly-top">
               <p>
                 Average per {showPeriodLabel(statsGranularity).toLowerCase()}: <strong>{periodStats.average.toFixed(2)} {baseCurrency}</strong>
@@ -783,7 +809,6 @@ export function Dashboard({
                   <tr>
                     <th>{showPeriodLabel(statsGranularity)}</th>
                     <th>Total</th>
-                    <th>Entries</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -791,7 +816,6 @@ export function Dashboard({
                     <tr key={row.month}>
                       <td>{row.month}</td>
                       <td>{row.total.toFixed(2)} {baseCurrency}</td>
-                      <td>{row.entries}</td>
                     </tr>
                   ))}
                 </tbody>

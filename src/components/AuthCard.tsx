@@ -1,3 +1,17 @@
+import type { ChangeEvent, FormEvent } from 'react'
+
+type AuthCardProps = {
+  authMode: 'login' | 'signup'
+  email: string
+  password: string
+  confirmPassword: string
+  onEmailChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onPasswordChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onConfirmPasswordChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>
+  onModeToggle: () => void
+}
+
 export function AuthCard({
   authMode,
   email,
@@ -8,7 +22,7 @@ export function AuthCard({
   onConfirmPasswordChange,
   onSubmit,
   onModeToggle,
-}) {
+}: AuthCardProps) {
   return (
     <main className="app-shell">
       <section className="auth-card">

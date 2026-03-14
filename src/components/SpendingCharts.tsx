@@ -9,8 +9,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import type { CategoryChartPoint, DateChartPoint } from '../types'
 
-export function SpendingCharts({ categoryChart, dateChart }) {
+type SpendingChartsProps = {
+  categoryChart: CategoryChartPoint[]
+  dateChart: DateChartPoint[]
+}
+
+export function SpendingCharts({ categoryChart, dateChart }: SpendingChartsProps) {
   return (
     <div className="charts-grid">
       <figure>
