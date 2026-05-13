@@ -24,42 +24,60 @@ export function AuthCard({
   onModeToggle,
 }: AuthCardProps) {
   return (
-    <main className="app-shell">
+    <main className="auth-shell">
       <section className="auth-card">
-        <h1>{authMode === 'login' ? 'Expense Tracker' : 'Create Account'}</h1>
+        <div className="brand-mark">
+          <span className="brand-orb">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 7h15a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7Z" />
+              <path d="M3 7V5a2 2 0 0 1 2-2h11" />
+              <circle cx="17" cy="14" r="1.4" fill="currentColor" stroke="none" />
+            </svg>
+          </span>
+          <span>Spendly</span>
+        </div>
+
+        <h1>{authMode === 'login' ? 'Welcome back' : 'Create your account'}</h1>
         <p>
           {authMode === 'login'
-            ? 'Sign in to manage your expenses.'
-            : 'Create account and keep your expenses private.'}
+            ? 'Sign in to keep tracking your expenses.'
+            : 'Start tracking expenses and stay in control of your money.'}
         </p>
 
         <form onSubmit={onSubmit} className="auth-form">
-          <label>Email</label>
-          <input type="email" value={email} onChange={onEmailChange} required />
+          <div>
+            <label>Email</label>
+            <input type="email" value={email} onChange={onEmailChange} placeholder="you@example.com" required />
+          </div>
 
-          <label>Password</label>
-          <input type="password" value={password} onChange={onPasswordChange} minLength={6} required />
+          <div>
+            <label>Password</label>
+            <input type="password" value={password} onChange={onPasswordChange} minLength={6} placeholder="At least 6 characters" required />
+          </div>
 
           {authMode === 'signup' ? (
-            <>
+            <div>
               <label>Confirm Password</label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={onConfirmPasswordChange}
                 minLength={6}
+                placeholder="Repeat your password"
                 required
               />
-            </>
+            </div>
           ) : null}
 
-          <button type="submit">{authMode === 'login' ? 'Login' : 'Sign Up'}</button>
+          <button type="submit" style={{ marginTop: 6 }}>
+            {authMode === 'login' ? 'Sign in' : 'Create account'}
+          </button>
         </form>
 
         <p className="auth-switch">
-          {authMode === 'login' ? 'No account yet?' : 'Already have an account?'}{' '}
+          {authMode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
           <button type="button" className="text-link" onClick={onModeToggle}>
-            {authMode === 'login' ? 'Create one' : 'Login'}
+            {authMode === 'login' ? 'Create one' : 'Sign in'}
           </button>
         </p>
       </section>

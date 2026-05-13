@@ -15,6 +15,10 @@ export async function updateRecurringExpense(id, payload) {
   return supabase.from('recurring_expenses').update(payload).eq('id', id)
 }
 
+export async function renameRecurringExpenseCategory(fromCategory, toCategory) {
+  return supabase.from('recurring_expenses').update({ category: toCategory }).eq('category', fromCategory)
+}
+
 export async function removeRecurringExpense(id) {
   return supabase.from('recurring_expenses').delete().eq('id', id)
 }

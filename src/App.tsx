@@ -7,7 +7,7 @@ export default function App() {
   const tracker = useExpenseTracker()
 
   if (tracker.loading) {
-    return <div className="center">Loading...</div>
+    return <div className="center">Loading…</div>
   }
 
   if (!tracker.session) {
@@ -47,6 +47,7 @@ export default function App() {
       onToggleTheme={() => tracker.setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
       session={tracker.session}
       summary={tracker.summary}
+      filterSummary={tracker.filterSummary}
       baseCurrency={tracker.baseCurrency}
       currencies={[...APP_OPTIONS.currencies]}
       onBaseCurrencyChange={(event) => tracker.setBaseCurrency(APP_OPTIONS.normalizeCurrency(event.target.value))}
@@ -55,7 +56,11 @@ export default function App() {
       amount={tracker.amount}
       description={tracker.description}
       expenseCurrency={tracker.expenseCurrency}
-      categories={[...APP_OPTIONS.categories]}
+      categories={tracker.categories}
+      defaultCategories={[...APP_OPTIONS.categories]}
+      customCategorySummaries={tracker.customCategorySummaries}
+      fetchingCategories={tracker.fetchingCategories}
+      categoriesFeatureEnabled={tracker.categoriesFeatureEnabled}
       recurringItems={tracker.visibleRecurringItems}
       fetchingRecurring={tracker.fetchingRecurring}
       recurringName={tracker.recurringName}
@@ -66,13 +71,16 @@ export default function App() {
       recurringNextDate={tracker.recurringNextDate}
       searchQuery={tracker.searchQuery}
       onExpenseDateChange={(event) => tracker.setExpenseDate(event.target.value)}
-      onCategoryChange={(event) => tracker.setCategory(event.target.value as (typeof APP_OPTIONS.categories)[number])}
+      onCategoryChange={(event) => tracker.setCategory(event.target.value)}
       onAmountChange={(event) => tracker.setAmount(event.target.value)}
       onDescriptionChange={(event) => tracker.setDescription(event.target.value)}
       onExpenseCurrencyChange={(event) => tracker.setExpenseCurrency(APP_OPTIONS.normalizeCurrency(event.target.value))}
       onAddExpense={tracker.handleAddExpense}
+      onAddCategory={tracker.handleAddCategory}
+      onRenameCategory={tracker.handleRenameCategory}
+      onDeleteCategory={tracker.handleDeleteCategory}
       onRecurringNameChange={(event) => tracker.setRecurringName(event.target.value)}
-      onRecurringCategoryChange={(event) => tracker.setRecurringCategory(event.target.value as (typeof APP_OPTIONS.categories)[number])}
+      onRecurringCategoryChange={(event) => tracker.setRecurringCategory(event.target.value)}
       onRecurringAmountChange={(event) => tracker.setRecurringAmount(event.target.value)}
       onRecurringCurrencyChange={(event) => tracker.setRecurringCurrency(APP_OPTIONS.normalizeCurrency(event.target.value))}
       onRecurringFrequencyChange={(event) => tracker.setRecurringFrequency(APP_OPTIONS.normalizeFrequency(event.target.value))}

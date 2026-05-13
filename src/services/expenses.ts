@@ -16,6 +16,10 @@ export async function editExpense(id, payload) {
   return supabase.from('expenses').update(payload).eq('id', id)
 }
 
+export async function renameExpenseCategory(fromCategory, toCategory) {
+  return supabase.from('expenses').update({ category: toCategory }).eq('category', fromCategory)
+}
+
 export async function removeExpense(id) {
   return supabase.from('expenses').delete().eq('id', id)
 }

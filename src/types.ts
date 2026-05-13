@@ -1,7 +1,13 @@
-export type Category = 'Food' | 'Transport' | 'Other'
+export type Category = string
 export type Currency = 'MKD' | 'EUR' | 'USD'
 export type Frequency = 'weekly' | 'monthly' | 'yearly'
 export type Theme = 'light' | 'dark'
+
+export type CategoryRow = {
+  id: string
+  name: string
+  created_at?: string
+}
 
 export type ExpenseRow = {
   id: string
@@ -40,6 +46,17 @@ export type VisibleRecurringExpense = RecurringExpenseRow & {
 export type Summary = {
   total: number
   currentMonthTotal: number
+}
+
+export type FilterSummary = {
+  hasActiveFilters: boolean
+  rangeStart: string
+  rangeEnd: string
+  selectedCategory: string
+  searchQuery: string
+  total: number
+  count: number
+  average: number
 }
 
 export type PeriodStatRow = {
@@ -87,4 +104,12 @@ export type RecurringUpdatePayload = {
   currency: string
   frequency: string
   next_due_date: string
+}
+
+export type CustomCategorySummary = {
+  id: string
+  name: string
+  expenseCount: number
+  recurringCount: number
+  totalCount: number
 }

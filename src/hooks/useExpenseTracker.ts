@@ -2,16 +2,24 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import {
+  createCategory,
+  getCategories,
+  removeCategory,
+  updateCategory,
+} from '../services/categories'
+import {
   createExpense,
   editExpense,
   getExpenses,
   removeExpense,
   removeExpensesByRecurringId,
+  renameExpenseCategory,
 } from '../services/expenses'
 import {
   createRecurringExpense,
   getRecurringExpenses,
   removeRecurringExpense,
+  renameRecurringExpenseCategory,
   updateRecurringExpense,
 } from '../services/recurringExpenses'
 import { supabase } from '../supabase'
@@ -29,10 +37,13 @@ import {
 } from '../lib/expenseUtils'
 import type {
   CategoryChartPoint,
+  CategoryRow,
+  CustomCategorySummary,
   Currency,
   DateChartPoint,
   ExpenseRow,
   ExpenseUpdatePayload,
+  FilterSummary,
   Frequency,
   PeriodComparison,
   PeriodStats,
@@ -43,6 +54,23 @@ import type {
   VisibleExpense,
   VisibleRecurringExpense,
 } from '../types'
+
+function uniqueCategoryNames(values: string[]): string[] {
+  return Array.from(new Set(values.filter((value) => value.trim()).map((value) => value.trim())))
+}
+
+function sortCategoryNames(values: string[]): string[] {
+  return [...values].sort((left, right) => {
+    const leftDefaultIndex = CATEGORIES.indexOf(left)
+    const rightDefaultIndex = CATEGORIES.indexOf(right)
+
+    if (leftDefaultIndex !== -1 && rightDefaultIndex !== -1) return leftDefaultIndex - rightDefaultIndex
+    if (leftDefaultIndex !== -1) return -1
+    if (rightDefaultIndex !== -1) return 1
+
+    return left.localeCompare(right)
+  })
+}
 
 export function useExpenseTracker() {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -68,17 +96,21 @@ export function useExpenseTracker() {
   const [expenses, setExpenses] = useState<ExpenseRow[]>([])
   const [fetchingExpenses, setFetchingExpenses] = useState(false)
 
+  const [customCategories, setCustomCategories] = useState<CategoryRow[]>([])
+  const [fetchingCategories, setFetchingCategories] = useState(false)
+  const [categoriesFeatureEnabled, setCategoriesFeatureEnabled] = useState(true)
+
   const [recurringItems, setRecurringItems] = useState<RecurringExpenseRow[]>([])
   const [fetchingRecurring, setFetchingRecurring] = useState(false)
 
   const [expenseDate, setExpenseDate] = useState(todayDate())
-  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>(CATEGORIES[0])
+  const [category, setCategory] = useState<string>(CATEGORIES[0])
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [expenseCurrency, setExpenseCurrency] = useState<Currency>(baseCurrency)
 
   const [recurringName, setRecurringName] = useState('')
-  const [recurringCategory, setRecurringCategory] = useState<(typeof CATEGORIES)[number]>(CATEGORIES[0])
+  const [recurringCategory, setRecurringCategory] = useState<string>(CATEGORIES[0])
   const [recurringAmount, setRecurringAmount] = useState('')
   const [recurringCurrency, setRecurringCurrency] = useState<Currency>(baseCurrency)
   const [recurringFrequency, setRecurringFrequency] = useState<Frequency>('monthly')
@@ -89,6 +121,30 @@ export function useExpenseTracker() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [statsGranularity, setStatsGranularity] = useState<Frequency>('monthly')
+
+  const normalizedDateRange = useMemo(() => {
+    const rangeStart = dateFrom && dateTo && dateFrom > dateTo ? dateTo : dateFrom
+    const rangeEnd = dateFrom && dateTo && dateFrom > dateTo ? dateFrom : dateTo
+
+    return { rangeStart, rangeEnd }
+  }, [dateFrom, dateTo])
+
+  const fetchCategories = useCallback(async (): Promise<boolean> => {
+    setFetchingCategories(true)
+    const { data, error } = await getCategories()
+
+    if (error) {
+      setCustomCategories([])
+      setCategoriesFeatureEnabled(false)
+      setFetchingCategories(false)
+      return false
+    }
+
+    setCustomCategories((data || []) as CategoryRow[])
+    setCategoriesFeatureEnabled(true)
+    setFetchingCategories(false)
+    return true
+  }, [])
 
   const fetchRecurring = useCallback(async (): Promise<boolean> => {
     setFetchingRecurring(true)
@@ -202,22 +258,50 @@ export function useExpenseTracker() {
   useEffect(() => {
     if (!session) {
       setExpenses([])
+      setCustomCategories([])
+      setCategoriesFeatureEnabled(true)
       setRecurringItems([])
       return
     }
 
     const syncData = async () => {
       await applyDueRecurringExpenses()
-      await Promise.all([fetchExpenses(), fetchRecurring()])
+      await Promise.all([fetchExpenses(), fetchRecurring(), fetchCategories()])
     }
 
     syncData()
-  }, [session, fetchExpenses, fetchRecurring, applyDueRecurringExpenses])
+  }, [session, fetchExpenses, fetchRecurring, fetchCategories, applyDueRecurringExpenses])
+
+  const categories = useMemo(() => {
+    const allCategoryNames = uniqueCategoryNames([
+      ...CATEGORIES,
+      ...customCategories.map((item) => item.name),
+      ...expenses.map((item) => item.category),
+      ...recurringItems.map((item) => item.category),
+    ])
+
+    return sortCategoryNames(allCategoryNames)
+  }, [customCategories, expenses, recurringItems])
+
+  useEffect(() => {
+    if (!categories.length) return
+
+    if (!categories.includes(category)) {
+      setCategory(categories[0])
+    }
+
+    if (!categories.includes(recurringCategory)) {
+      setRecurringCategory(categories[0])
+    }
+
+    if (selectedCategory && !categories.includes(selectedCategory)) {
+      setSelectedCategory('')
+    }
+  }, [categories, category, recurringCategory, selectedCategory])
 
   const filteredExpenses = useMemo(() => {
     const loweredQuery = searchQuery.trim().toLowerCase()
-    const rangeStart = dateFrom && dateTo && dateFrom > dateTo ? dateTo : dateFrom
-    const rangeEnd = dateFrom && dateTo && dateFrom > dateTo ? dateFrom : dateTo
+    const { rangeStart, rangeEnd } = normalizedDateRange
 
     return expenses.filter((item) => {
       const normalizedCurrency = normalizeCurrency(item.currency)
@@ -230,7 +314,7 @@ export function useExpenseTracker() {
 
       return true
     })
-  }, [expenses, selectedCategory, searchQuery, dateFrom, dateTo])
+  }, [expenses, selectedCategory, searchQuery, normalizedDateRange])
 
   const visibleExpenses = useMemo<VisibleExpense[]>(() => {
     return filteredExpenses.map((item) => {
@@ -271,6 +355,21 @@ export function useExpenseTracker() {
     }))
   }, [recurringItems, baseCurrency])
 
+  const customCategorySummaries = useMemo<CustomCategorySummary[]>(() => {
+    return customCategories.map((item) => {
+      const expenseCount = expenses.filter((expense) => expense.category === item.name).length
+      const recurringCount = recurringItems.filter((recurringItem) => recurringItem.category === item.name).length
+
+      return {
+        id: item.id,
+        name: item.name,
+        expenseCount,
+        recurringCount,
+        totalCount: expenseCount + recurringCount,
+      }
+    })
+  }, [customCategories, expenses, recurringItems])
+
   const summary = useMemo<Summary>(() => {
     const total = allVisibleExpenses.reduce((acc, item) => acc + item.baseAmount, 0)
     const currentMonth = new Date().toISOString().slice(0, 7)
@@ -283,6 +382,25 @@ export function useExpenseTracker() {
       currentMonthTotal,
     }
   }, [allVisibleExpenses])
+
+  const filterSummary = useMemo<FilterSummary>(() => {
+    const { rangeStart, rangeEnd } = normalizedDateRange
+    const normalizedSearchQuery = searchQuery.trim()
+    const hasActiveFilters = Boolean(selectedCategory || normalizedSearchQuery || rangeStart || rangeEnd)
+
+    return {
+      hasActiveFilters,
+      rangeStart,
+      rangeEnd,
+      selectedCategory,
+      searchQuery: normalizedSearchQuery,
+      total: visibleExpenses.reduce((acc, item) => acc + item.baseAmount, 0),
+      count: visibleExpenses.length,
+      average: visibleExpenses.length
+        ? visibleExpenses.reduce((acc, item) => acc + item.baseAmount, 0) / visibleExpenses.length
+        : 0,
+    }
+  }, [normalizedDateRange, searchQuery, selectedCategory, visibleExpenses])
 
   const periodStats = useMemo<PeriodStats>(() => {
     const totals = new Map<string, number>()
@@ -396,12 +514,12 @@ export function useExpenseTracker() {
     setConfirmPassword('')
   }
 
-  async function handleAddExpense(event: FormEvent<HTMLFormElement>) {
+  async function handleAddExpense(event: FormEvent<HTMLFormElement>): Promise<boolean> {
     event.preventDefault()
 
     const numericAmount = Number(amount)
     if (!expenseDate || Number.isNaN(numericAmount) || numericAmount <= 0) {
-      return
+      return false
     }
 
     const payload = {
@@ -414,20 +532,21 @@ export function useExpenseTracker() {
 
     const { error } = await createExpense(payload)
     if (error) {
-      return
+      return false
     }
 
     setAmount('')
     setDescription('')
     await fetchExpenses()
+    return true
   }
 
-  async function handleAddRecurringExpense(event: FormEvent<HTMLFormElement>) {
+  async function handleAddRecurringExpense(event: FormEvent<HTMLFormElement>): Promise<boolean> {
     event.preventDefault()
 
     const numericAmount = Number(recurringAmount)
     if (!recurringName.trim() || !recurringNextDate || Number.isNaN(numericAmount) || numericAmount <= 0) {
-      return
+      return false
     }
 
     const payload = {
@@ -441,7 +560,7 @@ export function useExpenseTracker() {
 
     const { error } = await createRecurringExpense(payload)
     if (error) {
-      return
+      return false
     }
 
     setRecurringName('')
@@ -452,6 +571,7 @@ export function useExpenseTracker() {
 
     await applyDueRecurringExpenses()
     await Promise.all([fetchRecurring(), fetchExpenses()])
+    return true
   }
 
   async function handleDeleteRecurringExpense(id: string): Promise<boolean> {
@@ -522,6 +642,84 @@ export function useExpenseTracker() {
     return true
   }
 
+  async function handleAddCategory(name: string): Promise<boolean> {
+    const nextName = name.trim()
+    if (!nextName || !categoriesFeatureEnabled) {
+      return false
+    }
+
+    if (categories.some((item) => item.toLowerCase() === nextName.toLowerCase())) {
+      return false
+    }
+
+    const { error } = await createCategory({ name: nextName })
+    if (error) {
+      return false
+    }
+
+    await fetchCategories()
+    return true
+  }
+
+  async function handleRenameCategory(id: string, currentName: string, nextNameRaw: string): Promise<boolean> {
+    const nextName = nextNameRaw.trim()
+    if (!nextName || !categoriesFeatureEnabled) {
+      return false
+    }
+
+    if (currentName === nextName) {
+      return true
+    }
+
+    if (categories.some((item) => item.toLowerCase() === nextName.toLowerCase() && item.toLowerCase() !== currentName.toLowerCase())) {
+      return false
+    }
+
+    const [{ error: expensesError }, { error: recurringError }, { error: categoryError }] = await Promise.all([
+      renameExpenseCategory(currentName, nextName),
+      renameRecurringExpenseCategory(currentName, nextName),
+      updateCategory(id, { name: nextName }),
+    ])
+
+    if (expensesError || recurringError || categoryError) {
+      return false
+    }
+
+    if (category === currentName) {
+      setCategory(nextName)
+    }
+
+    if (recurringCategory === currentName) {
+      setRecurringCategory(nextName)
+    }
+
+    if (selectedCategory === currentName) {
+      setSelectedCategory(nextName)
+    }
+
+    await Promise.all([fetchCategories(), fetchExpenses(), fetchRecurring()])
+    return true
+  }
+
+  async function handleDeleteCategory(id: string, name: string): Promise<boolean> {
+    if (!categoriesFeatureEnabled) {
+      return false
+    }
+
+    const isInUse = expenses.some((item) => item.category === name) || recurringItems.some((item) => item.category === name)
+    if (isInUse) {
+      return false
+    }
+
+    const { error } = await removeCategory(id)
+    if (error) {
+      return false
+    }
+
+    await fetchCategories()
+    return true
+  }
+
   return {
     theme,
     setTheme,
@@ -549,6 +747,10 @@ export function useExpenseTracker() {
     setDescription,
     expenseCurrency,
     setExpenseCurrency,
+    categories,
+    customCategorySummaries,
+    fetchingCategories,
+    categoriesFeatureEnabled,
     recurringItems,
     fetchingRecurring,
     recurringName,
@@ -577,10 +779,14 @@ export function useExpenseTracker() {
     visibleExpenses,
     visibleRecurringItems,
     summary,
+    filterSummary,
     categoryChart,
     dateChart,
     periodStats,
     periodComparison,
+    handleAddCategory,
+    handleRenameCategory,
+    handleDeleteCategory,
     handleAuthSubmit,
     handleLogout,
     handleAddExpense,
