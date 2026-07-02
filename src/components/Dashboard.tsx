@@ -9,7 +9,7 @@ import { CategoriesSection } from './dashboard/CategoriesSection'
 import { ExpensesSection } from './dashboard/ExpensesSection'
 import { HeroCard } from './dashboard/HeroCard'
 import { Icon } from './dashboard/Icons'
-import { Modal } from './dashboard/Modal'
+import { Modal, useBodyScrollLock } from './dashboard/Modal'
 import { RecurringSection } from './dashboard/RecurringSection'
 import { Sidebar } from './dashboard/Sidebar'
 import type { NavId } from './dashboard/Sidebar'
@@ -31,6 +31,7 @@ export function Dashboard({ tracker }: DashboardProps) {
   const [addRecurringOpen, setAddRecurringOpen] = useState(false)
 
   const closeSidebar = () => setSidebarOpen(false)
+  useBodyScrollLock(sidebarOpen)
   const currencies: Currency[] = [...APP_OPTIONS.currencies]
   const defaultCategories = [...APP_OPTIONS.categories]
 

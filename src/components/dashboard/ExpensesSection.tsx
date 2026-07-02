@@ -272,14 +272,14 @@ export function ExpensesSection({
 
                 return (
                   <tr key={item.id}>
-                    <td>
+                    <td data-label="Date">
                       {isEditing ? (
                         <input className="table-input" type="date" value={editDate} onChange={(event) => setEditDate(event.target.value)} />
                       ) : (
                         <span style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>{item.expense_date}</span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Category">
                       {isEditing ? (
                         <select className="table-input" value={editCategory} onChange={(event) => setEditCategory(event.target.value)}>
                           {categories.map((c) => (
@@ -292,7 +292,7 @@ export function ExpensesSection({
                         <CategoryPill name={item.category} />
                       )}
                     </td>
-                    <td>
+                    <td data-label="Amount">
                       {isEditing ? (
                         <div className="split-field">
                           <input className="table-input" type="number" min="0.01" step="0.01" value={editAmount} onChange={(event) => setEditAmount(event.target.value)} />
@@ -305,24 +305,24 @@ export function ExpensesSection({
                           </select>
                         </div>
                       ) : (
-                        <>
+                        <div className="amount-cell">
                           <div className="amount-pos">
                             {formatAmount(item.originalAmount)} <span style={{ color: 'var(--muted)', fontWeight: 500 }}>{item.currency}</span>
                           </div>
                           {item.currency !== baseCurrency ? (
                             <div className="sub-amount">≈ {formatAmount(item.baseAmount)} {baseCurrency}</div>
                           ) : null}
-                        </>
+                        </div>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Description">
                       {isEditing ? (
                         <input className="table-input" type="text" maxLength={200} value={editDescription} onChange={(event) => setEditDescription(event.target.value)} />
                       ) : (
                         <span style={{ color: 'var(--muted)' }}>{item.description || '—'}</span>
                       )}
                     </td>
-                    <td>
+                    <td className="actions-cell">
                       <div className="row-actions">
                         {isEditing ? (
                           <>

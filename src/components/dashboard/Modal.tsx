@@ -2,6 +2,20 @@ import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from './Icons'
 
+let scrollLocks = 0
+
+export function useBodyScrollLock(active: boolean) {
+  useEffect(() => {
+    if (!active) return
+    scrollLocks += 1
+    document.body.classList.add('no-scroll')
+    return () => {
+      scrollLocks -= 1
+      if (scrollLocks <= 0) document.body.classList.remove('no-scroll')
+    }
+  }, [active])
+}
+
 type ModalProps = {
   open: boolean
   onClose: () => void
@@ -12,6 +26,8 @@ type ModalProps = {
 }
 
 export function Modal({ open, onClose, title, subtitle = null, className = '', children }: ModalProps) {
+  useBodyScrollLock(open)
+
   useEffect(() => {
     if (!open) return
     const onKey = (event: KeyboardEvent) => {

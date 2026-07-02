@@ -131,14 +131,14 @@ export function RecurringSection({
 
                 return (
                   <tr key={item.id}>
-                    <td>
+                    <td data-label="Name">
                       {isEditing ? (
                         <input className="table-input" type="text" maxLength={80} value={editName} onChange={(event) => setEditName(event.target.value)} />
                       ) : (
                         <strong style={{ fontWeight: 600 }}>{item.name}</strong>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Category">
                       {isEditing ? (
                         <select className="table-input" value={editCategory} onChange={(event) => setEditCategory(event.target.value)}>
                           {categories.map((c) => (
@@ -151,7 +151,7 @@ export function RecurringSection({
                         <CategoryPill name={item.category} />
                       )}
                     </td>
-                    <td>
+                    <td data-label="Amount">
                       {isEditing ? (
                         <div className="split-field">
                           <input className="table-input" type="number" min="0.01" step="0.01" value={editAmount} onChange={(event) => setEditAmount(event.target.value)} />
@@ -164,17 +164,17 @@ export function RecurringSection({
                           </select>
                         </div>
                       ) : (
-                        <>
+                        <div className="amount-cell">
                           <div className="amount-pos">
                             {formatAmount(item.amount)} <span style={{ color: 'var(--muted)', fontWeight: 500 }}>{item.currency}</span>
                           </div>
                           {item.currency !== baseCurrency ? (
                             <div className="sub-amount">≈ {formatAmount(item.baseAmount)} {baseCurrency}</div>
                           ) : null}
-                        </>
+                        </div>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Frequency">
                       {isEditing ? (
                         <select className="table-input" value={editFrequency} onChange={(event) => setEditFrequency(event.target.value as Frequency)}>
                           <option value="weekly">Weekly</option>
@@ -185,14 +185,14 @@ export function RecurringSection({
                         <span style={{ color: 'var(--muted)' }}>{item.frequency}</span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Next charge">
                       {isEditing ? (
                         <input className="table-input" type="date" value={editNextDate} onChange={(event) => setEditNextDate(event.target.value)} />
                       ) : (
                         <span style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>{item.next_due_date}</span>
                       )}
                     </td>
-                    <td>
+                    <td className="actions-cell">
                       <div className="row-actions">
                         {isEditing ? (
                           <>

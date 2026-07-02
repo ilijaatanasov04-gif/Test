@@ -156,7 +156,7 @@ export function CategoriesSection({
 
                 return (
                   <tr key={item.id}>
-                    <td>
+                    <td data-label="Name">
                       {isEditing ? (
                         <input className="table-input" type="text" maxLength={40} value={editName} onChange={(event) => setEditName(event.target.value)} />
                       ) : (
@@ -166,8 +166,8 @@ export function CategoriesSection({
                         </span>
                       )}
                     </td>
-                    <td><span style={{ color: 'var(--muted)' }}>{usageLabel}</span></td>
-                    <td>
+                    <td data-label="Usage"><span style={{ color: 'var(--muted)' }}>{usageLabel}</span></td>
+                    <td className="actions-cell">
                       <div className="row-actions">
                         {isEditing ? (
                           <>
