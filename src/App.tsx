@@ -1,9 +1,18 @@
 import { AuthCard } from './components/AuthCard'
 import { AuthEntryCard } from './components/AuthEntryCard'
 import { Dashboard } from './components/Dashboard'
-import { APP_OPTIONS, useExpenseTracker } from './hooks/useExpenseTracker'
+import { ToastProvider } from './components/dashboard/Toast'
+import { useExpenseTracker } from './hooks/useExpenseTracker'
 
 export default function App() {
+  return (
+    <ToastProvider>
+      <AppInner />
+    </ToastProvider>
+  )
+}
+
+function AppInner() {
   const tracker = useExpenseTracker()
 
   if (tracker.loading) {
@@ -41,77 +50,5 @@ export default function App() {
     )
   }
 
-  return (
-    <Dashboard
-      theme={tracker.theme}
-      onToggleTheme={() => tracker.setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
-      session={tracker.session}
-      summary={tracker.summary}
-      filterSummary={tracker.filterSummary}
-      baseCurrency={tracker.baseCurrency}
-      currencies={[...APP_OPTIONS.currencies]}
-      onBaseCurrencyChange={(event) => tracker.setBaseCurrency(APP_OPTIONS.normalizeCurrency(event.target.value))}
-      expenseDate={tracker.expenseDate}
-      category={tracker.category}
-      amount={tracker.amount}
-      description={tracker.description}
-      expenseCurrency={tracker.expenseCurrency}
-      categories={tracker.categories}
-      defaultCategories={[...APP_OPTIONS.categories]}
-      customCategorySummaries={tracker.customCategorySummaries}
-      fetchingCategories={tracker.fetchingCategories}
-      categoriesFeatureEnabled={tracker.categoriesFeatureEnabled}
-      recurringItems={tracker.visibleRecurringItems}
-      fetchingRecurring={tracker.fetchingRecurring}
-      recurringName={tracker.recurringName}
-      recurringCategory={tracker.recurringCategory}
-      recurringAmount={tracker.recurringAmount}
-      recurringCurrency={tracker.recurringCurrency}
-      recurringFrequency={tracker.recurringFrequency}
-      recurringNextDate={tracker.recurringNextDate}
-      searchQuery={tracker.searchQuery}
-      onExpenseDateChange={(event) => tracker.setExpenseDate(event.target.value)}
-      onCategoryChange={(event) => tracker.setCategory(event.target.value)}
-      onAmountChange={(event) => tracker.setAmount(event.target.value)}
-      onDescriptionChange={(event) => tracker.setDescription(event.target.value)}
-      onExpenseCurrencyChange={(event) => tracker.setExpenseCurrency(APP_OPTIONS.normalizeCurrency(event.target.value))}
-      onAddExpense={tracker.handleAddExpense}
-      onAddCategory={tracker.handleAddCategory}
-      onRenameCategory={tracker.handleRenameCategory}
-      onDeleteCategory={tracker.handleDeleteCategory}
-      onRecurringNameChange={(event) => tracker.setRecurringName(event.target.value)}
-      onRecurringCategoryChange={(event) => tracker.setRecurringCategory(event.target.value)}
-      onRecurringAmountChange={(event) => tracker.setRecurringAmount(event.target.value)}
-      onRecurringCurrencyChange={(event) => tracker.setRecurringCurrency(APP_OPTIONS.normalizeCurrency(event.target.value))}
-      onRecurringFrequencyChange={(event) => tracker.setRecurringFrequency(APP_OPTIONS.normalizeFrequency(event.target.value))}
-      onRecurringNextDateChange={(event) => tracker.setRecurringNextDate(event.target.value)}
-      onAddRecurringExpense={tracker.handleAddRecurringExpense}
-      onDeleteRecurringExpense={tracker.handleDeleteRecurringExpense}
-      onUpdateRecurringExpense={tracker.handleUpdateRecurringExpense}
-      selectedCategory={tracker.selectedCategory}
-      dateFrom={tracker.dateFrom}
-      dateTo={tracker.dateTo}
-      statsGranularity={tracker.statsGranularity}
-      onCategoryFilterChange={(event) => tracker.setSelectedCategory(event.target.value)}
-      onDateFromChange={(event) => tracker.setDateFrom(event.target.value)}
-      onDateToChange={(event) => tracker.setDateTo(event.target.value)}
-      onSearchQueryChange={(event) => tracker.setSearchQuery(event.target.value)}
-      onStatsGranularityChange={(event) => tracker.setStatsGranularity(APP_OPTIONS.normalizeFrequency(event.target.value))}
-      onResetFilters={() => {
-        tracker.setSelectedCategory('')
-        tracker.setDateFrom('')
-        tracker.setDateTo('')
-        tracker.setSearchQuery('')
-      }}
-      fetchingExpenses={tracker.fetchingExpenses}
-      filteredExpenses={tracker.visibleExpenses}
-      categoryChart={tracker.categoryChart}
-      dateChart={tracker.dateChart}
-      periodStats={tracker.periodStats}
-      periodComparison={tracker.periodComparison}
-      onLogout={tracker.handleLogout}
-      onUpdateExpense={tracker.handleUpdateExpense}
-      onDeleteExpense={tracker.handleDeleteExpense}
-    />
-  )
+  return <Dashboard tracker={tracker} />
 }

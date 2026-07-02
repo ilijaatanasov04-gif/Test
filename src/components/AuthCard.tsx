@@ -8,7 +8,7 @@ type AuthCardProps = {
   onEmailChange: (event: ChangeEvent<HTMLInputElement>) => void
   onPasswordChange: (event: ChangeEvent<HTMLInputElement>) => void
   onConfirmPasswordChange: (event: ChangeEvent<HTMLInputElement>) => void
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void | boolean>
   onModeToggle: () => void
 }
 

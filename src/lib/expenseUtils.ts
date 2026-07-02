@@ -1,13 +1,17 @@
 import type { Currency, Frequency } from '../types'
+import { FALLBACK_RATE_TO_USD, loadCachedRates } from './fxRates'
 
 export const CATEGORIES = ['Food', 'Transport', 'Other'] as const
 export const CURRENCIES = ['MKD', 'EUR', 'USD'] as const
 export const FREQUENCIES = ['weekly', 'monthly', 'yearly'] as const
 
-const RATE_TO_USD: Record<Currency, number> = {
-  MKD: 0.0176,
-  EUR: 1.08,
-  USD: 1,
+function currentRates(): Record<Currency, number> {
+  const cached = loadCachedRates()
+  return {
+    MKD: cached.MKD || FALLBACK_RATE_TO_USD.MKD,
+    EUR: cached.EUR || FALLBACK_RATE_TO_USD.EUR,
+    USD: cached.USD || FALLBACK_RATE_TO_USD.USD,
+  }
 }
 
 function pad(value: number): string {
@@ -148,8 +152,9 @@ export function shiftDateByGranularity(yyyyMmDd: string, granularity: Frequency,
 export function convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
   const from = normalizeCurrency(fromCurrency)
   const to = normalizeCurrency(toCurrency)
-  const fromRate = RATE_TO_USD[from]
-  const toRate = RATE_TO_USD[to]
+  const rates = currentRates()
+  const fromRate = rates[from]
+  const toRate = rates[to]
 
   if (!fromRate || !toRate) return amount
   if (from === to) return amount

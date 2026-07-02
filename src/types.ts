@@ -31,6 +31,14 @@ export type RecurringExpenseRow = {
   created_at?: string
 }
 
+export type BudgetRow = {
+  id: string
+  category: Category
+  amount: number | string
+  currency: string
+  created_at?: string
+}
+
 export type VisibleExpense = ExpenseRow & {
   currency: Currency
   originalAmount: number
@@ -41,6 +49,16 @@ export type VisibleRecurringExpense = RecurringExpenseRow & {
   currency: Currency
   frequency: Frequency
   baseAmount: number
+}
+
+export type BudgetProgress = {
+  id: string
+  category: Category
+  amount: number
+  currency: Currency
+  baseAmount: number
+  spentThisMonth: number
+  percent: number
 }
 
 export type Summary = {
@@ -89,6 +107,15 @@ export type DateChartPoint = {
   total: number
 }
 
+export type ExpenseInsertPayload = {
+  expense_date: string
+  category: Category
+  amount: number | string
+  currency: string
+  description?: string
+  recurring_expense_id?: string
+}
+
 export type ExpenseUpdatePayload = {
   expense_date: string
   category: Category
@@ -97,13 +124,41 @@ export type ExpenseUpdatePayload = {
   description: string
 }
 
-export type RecurringUpdatePayload = {
+export type RecurringInsertPayload = {
   name: string
   category: Category
   amount: number | string
   currency: string
   frequency: string
   next_due_date: string
+}
+
+export type RecurringUpdatePayload = {
+  name?: string
+  category?: Category
+  amount?: number | string
+  currency?: string
+  frequency?: string
+  next_due_date?: string
+}
+
+export type BudgetInsertPayload = {
+  category: Category
+  amount: number
+  currency: Currency
+}
+
+export type BudgetUpdatePayload = {
+  amount: number
+  currency: Currency
+}
+
+export type CategoryInsertPayload = {
+  name: string
+}
+
+export type CategoryUpdatePayload = {
+  name: string
 }
 
 export type CustomCategorySummary = {

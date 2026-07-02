@@ -128,3 +128,134 @@ create policy "delete own expenses"
 on public.expenses
 for delete
 using (auth.uid() = user_id);
+
+create table if not exists public.budgets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  category text not null,
+  amount numeric(12,2) not null check (amount > 0),
+  currency text not null default 'MKD',
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists budgets_user_category_unique
+on public.budgets (user_id, lower(category));
+
+alter table public.budgets enable row level security;
+
+drop policy if exists "select own budgets" on public.budgets;
+create policy "select own budgets"
+on public.budgets
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "insert own budgets" on public.budgets;
+create policy "insert own budgets"
+on public.budgets
+for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "update own budgets" on public.budgets;
+create policy "update own budgets"
+on public.budgets
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "delete own budgets" on public.budgets;
+create policy "delete own budgets"
+on public.budgets
+for delete
+using (auth.uid() = user_id);
+
+create or replace function public.apply_due_recurring_expenses()
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  rule public.recurring_expenses%rowtype;
+  next_date date;
+  inserted integer := 0;
+  target_user uuid := auth.uid();
+begin
+  if target_user is null then
+    return 0;
+  end if;
+
+  for rule in
+    select * from public.recurring_expenses
+    where user_id = target_user
+      and next_due_date <= current_date
+  loop
+    next_date := rule.next_due_date;
+
+    while next_date <= current_date loop
+      insert into public.expenses (user_id, expense_date, category, amount, currency, description, recurring_expense_id)
+      values (rule.user_id, next_date, rule.category, rule.amount, rule.currency, 'Recurring: ' || rule.name, rule.id)
+      on conflict do nothing;
+      if found then
+        inserted := inserted + 1;
+      end if;
+
+      if rule.frequency = 'weekly' then
+        next_date := next_date + interval '7 days';
+      elsif rule.frequency = 'yearly' then
+        next_date := next_date + interval '1 year';
+      else
+        next_date := next_date + interval '1 month';
+      end if;
+    end loop;
+
+    update public.recurring_expenses
+    set next_due_date = next_date
+    where id = rule.id;
+  end loop;
+
+  return inserted;
+end;
+$$;
+
+grant execute on function public.apply_due_recurring_expenses() to authenticated;
+
+-- Optional: nightly server-side backfill for every user. Requires the pg_cron extension.
+-- create extension if not exists pg_cron;
+--
+-- create or replace function public.apply_due_recurring_expenses_all()
+-- returns integer
+-- language plpgsql
+-- security definer
+-- set search_path = public
+-- as $$
+-- declare
+--   rule public.recurring_expenses%rowtype;
+--   next_date date;
+--   inserted integer := 0;
+-- begin
+--   for rule in
+--     select * from public.recurring_expenses where next_due_date <= current_date
+--   loop
+--     next_date := rule.next_due_date;
+--     while next_date <= current_date loop
+--       insert into public.expenses (user_id, expense_date, category, amount, currency, description, recurring_expense_id)
+--       values (rule.user_id, next_date, rule.category, rule.amount, rule.currency, 'Recurring: ' || rule.name, rule.id)
+--       on conflict do nothing;
+--       if found then inserted := inserted + 1; end if;
+--
+--       if rule.frequency = 'weekly' then next_date := next_date + interval '7 days';
+--       elsif rule.frequency = 'yearly' then next_date := next_date + interval '1 year';
+--       else next_date := next_date + interval '1 month';
+--       end if;
+--     end loop;
+--     update public.recurring_expenses set next_due_date = next_date where id = rule.id;
+--   end loop;
+--   return inserted;
+-- end;
+-- $$;
+--
+-- select cron.schedule(
+--   'apply-due-recurring-expenses-daily',
+--   '5 0 * * *',
+--   $$ select public.apply_due_recurring_expenses_all(); $$
+-- );
